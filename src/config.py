@@ -22,3 +22,9 @@ HDBSCAN_CLUSTER_SELECTION_METHOD = "eom"
 MAX_PHOTOS_UPLOAD = 5000
 SUPPORTED_FORMATS = [".jpg", ".jpeg", ".png", ".heic", ".heif"]
 TEMP_DIR = os.path.join(tempfile.gettempdir(), "facecluster")
+
+# --- Konstanta UI & Deteksi ---
+FACE_PADDING = 0.1          # Padding wajah saat crop (10% dari ukuran bounding box)
+FACE_MIN_CROP_SIZE = 20     # Ukuran minimum crop wajah dalam pixel
+MAX_CLUSTER_PREVIEW = 18    # Maksimum wajah yang ditampilkan per cluster di gallery
+MAX_NOISE_PREVIEW = 12      # Maksimum wajah noise yang ditampilkan

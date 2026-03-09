@@ -1,6 +1,9 @@
+import logging
 import numpy as np
 import umap
 import hdbscan
+
+logger = logging.getLogger(__name__)
 from sklearn.metrics import silhouette_score
 from src.config import (
     UMAP_N_COMPONENTS, UMAP_N_NEIGHBORS, UMAP_MIN_DIST,

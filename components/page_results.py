@@ -1,5 +1,7 @@
 import streamlit as st
 from src.utils import create_cluster_zip, numpy_to_pil
+from src.config import MAX_CLUSTER_PREVIEW, MAX_NOISE_PREVIEW
+from components import reset_session_state
 
 
 def render():
@@ -76,15 +78,14 @@ def render():
             )
 
             # Grid wajah
-            max_preview = 18
             cols = st.columns(6)
-            for i, face in enumerate(faces[:max_preview]):
+            for i, face in enumerate(faces[:MAX_CLUSTER_PREVIEW]):
                 with cols[i % 6]:
                     pil_img = numpy_to_pil(face["crop"])
                     st.image(pil_img, use_container_width=True)
 
-            if len(faces) > max_preview:
-                st.caption(f"Menampilkan {max_preview} dari {len(faces)} wajah")
+            if len(faces) > MAX_CLUSTER_PREVIEW:
+                st.caption(f"Menampilkan {MAX_CLUSTER_PREVIEW} dari {len(faces)} wajah")
 
     # Noise section
     if noise_faces:
@@ -95,18 +96,17 @@ def render():
                 "Bisa karena hanya muncul sekali atau kualitas deteksi rendah."
             )
             cols = st.columns(6)
-            for i, face in enumerate(noise_faces[:12]):
+            for i, face in enumerate(noise_faces[:MAX_NOISE_PREVIEW]):
                 with cols[i % 6]:
                     pil_img = numpy_to_pil(face["crop"])
                     st.image(pil_img, use_container_width=True)
 
-            if len(noise_faces) > 12:
-                st.caption(f"Menampilkan 12 dari {len(noise_faces)} wajah noise")
+            if len(noise_faces) > MAX_NOISE_PREVIEW:
+                st.caption(f"Menampilkan {MAX_NOISE_PREVIEW} dari {len(noise_faces)} wajah noise")
 
     # Reset
     st.markdown("---")
     if st.button("🔄 Proses Foto Baru", use_container_width=True):
-        for key in ["photos", "clusters", "noise_faces", "metrics", "face_stats"]:
-            st.session_state[key] = None
+        reset_session_state()
         st.session_state.page = "upload"
         st.rerun()

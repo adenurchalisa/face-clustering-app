@@ -1,3 +1,4 @@
+import logging
 import os
 import io
 import zipfile
@@ -5,6 +6,8 @@ import shutil
 from PIL import Image
 import numpy as np
 from src.config import TEMP_DIR, SUPPORTED_FORMATS, MAX_PHOTOS_UPLOAD
+
+logger = logging.getLogger(__name__)
 
 HEIC_FORMATS = (".heic", ".heif")
 
@@ -73,7 +76,8 @@ def convert_heic_to_jpg(heic_path):
 
         os.remove(heic_path)
         return jpg_path
-    except Exception:
+    except Exception as e:
+        logger.warning("Gagal konversi HEIC '%s': %s", heic_path, e)
         return None
 
 
