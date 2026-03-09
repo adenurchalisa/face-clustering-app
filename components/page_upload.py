@@ -4,7 +4,6 @@ from src.drive_handler import download_from_drive
 from src.config import MAX_PHOTOS_UPLOAD
 from components import reset_session_state
 
-
 def render():
     st.header("📁 Upload Foto")
     st.caption(f"Maksimal {MAX_PHOTOS_UPLOAD} foto · Format: JPG, PNG, HEIC · Bisa upload ZIP")
@@ -12,6 +11,7 @@ def render():
     tab1, tab2 = st.tabs(["📁 Upload File", "🔗 Google Drive"])
 
     with tab1:
+        st.caption("Maks. 5 GB per upload · Untuk koleksi >1000 foto, gunakan tab Google Drive.")
         uploaded_files = st.file_uploader(
             "Pilih foto atau file ZIP",
             type=["jpg", "jpeg", "png", "heic", "heif", "zip"],
@@ -60,8 +60,14 @@ def render():
 
         if drive_link:
             if st.button("🔄 Download & Proses", type="primary", use_container_width=True, key="btn_drive"):
-                with st.spinner("Mengunduh dari Google Drive..."):
-                    photo_paths, error = download_from_drive(drive_link)
+                progress_bar = st.progress(0, text="Menghubungi Google Drive...")
+
+                def on_progress(current, total, filename):
+                    pct = int(current / total * 100)
+                    progress_bar.progress(pct, text=f"Mengunduh {current}/{total}: {filename}")
+
+                photo_paths, error = download_from_drive(drive_link, progress_callback=on_progress)
+                progress_bar.empty()
 
                 if error:
                     st.error(error)

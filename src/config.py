@@ -1,6 +1,9 @@
 import os
 import tempfile
 
+# Google Drive API
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
+
 # InsightFace
 FACE_MODEL_NAME = "buffalo_l"
 FACE_DET_SIZE = (640, 640)

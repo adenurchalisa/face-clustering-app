@@ -1,10 +1,37 @@
-import logging
 import os
 import re
-import subprocess
-from src.config import TEMP_DIR, SUPPORTED_FORMATS, MAX_PHOTOS_UPLOAD
+import shutil
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-logger = logging.getLogger(__name__)
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseDownload
+
+from src.config import GOOGLE_API_KEY, TEMP_DIR, SUPPORTED_FORMATS, MAX_PHOTOS_UPLOAD
+
+MAX_WORKERS = 10  # jumlah file yang diunduh secara paralel
+
+
+def _get_api_key():
+    """Ambil API key: prioritaskan st.secrets (Streamlit Cloud), lalu env var."""
+    try:
+        import streamlit as st
+        key = st.secrets.get("GOOGLE_API_KEY", "")
+        if key:
+            return key
+    except Exception:
+        pass
+    return GOOGLE_API_KEY
+
+
+def _build_service():
+    api_key = _get_api_key()
+    if not api_key:
+        raise ValueError(
+            "GOOGLE_API_KEY belum dikonfigurasi. "
+            "Tambahkan di .streamlit/secrets.toml (lokal) atau Streamlit Cloud secrets."
+        )
+    return build("drive", "v3", developerKey=api_key, cache_discovery=False)
 
 
 def extract_drive_id(link):
@@ -24,62 +51,123 @@ def extract_drive_id(link):
     return None, None
 
 
-def download_from_drive(link, output_dir=None):
+def _list_files_recursive(service, folder_id):
+    """List semua file foto di folder secara rekursif, dengan pagination."""
+    files = []
+    page_token = None
+
+    while True:
+        response = service.files().list(
+            q=f"'{folder_id}' in parents and trashed=false",
+            fields="nextPageToken, files(id, name, mimeType)",
+            pageToken=page_token,
+            pageSize=1000,
+        ).execute()
+
+        for item in response.get("files", []):
+            if item["mimeType"] == "application/vnd.google-apps.folder":
+                files.extend(_list_files_recursive(service, item["id"]))
+            elif any(item["name"].lower().endswith(ext) for ext in SUPPORTED_FORMATS):
+                files.append(item)
+
+            if len(files) >= MAX_PHOTOS_UPLOAD:
+                return files
+
+        page_token = response.get("nextPageToken")
+        if not page_token:
+            break
+
+    return files
+
+
+def _download_file(api_key, file_id, dest_path):
+    """Download satu file dari Drive ke dest_path.
+    Membuat service sendiri agar thread-safe.
     """
-    Download foto dari Google Drive link menggunakan gdown CLI.
+    service = build("drive", "v3", developerKey=api_key, cache_discovery=False)
+    request = service.files().get_media(fileId=file_id)
+    with open(dest_path, "wb") as f:
+        downloader = MediaIoBaseDownload(f, request)
+        done = False
+        while not done:
+            _, done = downloader.next_chunk()
+
+
+def _download_all_parallel(api_key, files, output_dir, progress_callback=None):
+    """Download semua file secara paralel. Return: list of path yang berhasil."""
+    photo_paths = []
+    lock = threading.Lock()
+    completed = [0]
+
+    def download_one(file_meta):
+        dest_path = os.path.join(output_dir, file_meta["name"])
+        if os.path.exists(dest_path):
+            base, ext = os.path.splitext(file_meta["name"])
+            dest_path = os.path.join(output_dir, f"{base}_{file_meta['id'][:6]}{ext}")
+        try:
+            _download_file(api_key, file_meta["id"], dest_path)
+            return dest_path, file_meta["name"]
+        except Exception:
+            return None, file_meta["name"]
+
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = {executor.submit(download_one, f): f for f in files}
+        for future in as_completed(futures):
+            dest_path, filename = future.result()
+            with lock:
+                completed[0] += 1
+                if dest_path:
+                    photo_paths.append(dest_path)
+                if progress_callback:
+                    progress_callback(completed[0], len(files), filename)
+
+    return photo_paths
+
+
+def download_from_drive(link, output_dir=None, progress_callback=None):
+    """
+    Download foto dari Google Drive menggunakan Google Drive API v3.
+    - progress_callback(current, total, filename) dipanggil setiap file selesai diunduh.
     Return: (photo_paths, error_message)
     """
     if output_dir is None:
         output_dir = os.path.join(TEMP_DIR, "drive_photos")
 
-    os.makedirs(output_dir, exist_ok=True)
+    # Bersihkan sisa sesi sebelumnya
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
+    os.makedirs(output_dir)
 
     drive_id, link_type = extract_drive_id(link)
     if drive_id is None:
         return [], "Link Google Drive tidak valid. Pastikan formatnya benar."
 
     try:
-        if link_type == "folder":
-            # Gunakan gdown CLI dengan flag --folder dan --remaining-ok
-            # --remaining-ok: lanjutkan meskipun ada file yang gagal
-            url = f"https://drive.google.com/drive/folders/{drive_id}"
-            result = subprocess.run(
-                ["gdown", "--folder", "--remaining-ok", "-O", output_dir, url],
-                capture_output=True,
-                text=True,
-                timeout=600,  # 10 menit timeout
-            )
-            if result.returncode != 0 and not os.listdir(output_dir):
-                return [], f"Gagal download: {result.stderr[:200]}"
-        else:
-            url = f"https://drive.google.com/uc?id={drive_id}"
-            result = subprocess.run(
-                ["gdown", url, "-O", output_dir],
-                capture_output=True,
-                text=True,
-                timeout=600,
-            )
-            if result.returncode != 0:
-                logger.warning("gdown single file gagal: %s", result.stderr[:500])
-    except subprocess.TimeoutExpired:
-        return [], "Download timeout. Coba upload ZIP langsung sebagai alternatif."
-    except Exception as e:
-        return [], f"Gagal download dari Google Drive: {str(e)}"
+        service = _build_service()
+    except ValueError as e:
+        return [], str(e)
 
-    # Kumpulkan foto valid
-    photo_paths = []
-    reached_limit = False
-    for root, dirs, files in os.walk(output_dir):
-        if reached_limit:
-            break
-        for f in sorted(files):
-            if len(photo_paths) >= MAX_PHOTOS_UPLOAD:
-                reached_limit = True
-                break
-            if any(f.lower().endswith(ext) for ext in SUPPORTED_FORMATS):
-                photo_paths.append(os.path.join(root, f))
+    try:
+        if link_type == "folder":
+            files = _list_files_recursive(service, drive_id)
+        else:
+            meta = service.files().get(fileId=drive_id, fields="id, name, mimeType").execute()
+            if any(meta["name"].lower().endswith(ext) for ext in SUPPORTED_FORMATS):
+                files = [meta]
+            else:
+                files = []
+    except Exception as e:
+        return [], f"Gagal membaca isi Google Drive: {str(e)}"
+
+    if not files:
+        return [], "Tidak ada foto valid ditemukan. Pastikan folder berisi file JPG/PNG/HEIC."
+
+    files = files[:MAX_PHOTOS_UPLOAD]
+    api_key = _get_api_key()
+
+    photo_paths = _download_all_parallel(api_key, files, output_dir, progress_callback)
 
     if not photo_paths:
-        return [], "Tidak ada foto valid ditemukan. Pastikan folder berisi file JPG/PNG."
+        return [], "Semua file gagal diunduh. Pastikan file tidak dibatasi aksesnya."
 
     return photo_paths, None

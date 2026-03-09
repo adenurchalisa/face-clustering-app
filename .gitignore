@@ -43,3 +43,6 @@ outputs/
 *.joblib
 temp/
 test/
+
+# Secrets — jangan pernah di-commit
+.streamlit/secrets.toml
