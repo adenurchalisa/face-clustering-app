@@ -1,8 +1,14 @@
+import logging
 import numpy as np
 import cv2
 import streamlit as st
 from insightface.app import FaceAnalysis
-from src.config import FACE_MODEL_NAME, FACE_DET_SIZE, FACE_DET_THRESHOLD
+from src.config import (
+    FACE_MODEL_NAME, FACE_DET_SIZE, FACE_DET_THRESHOLD,
+    FACE_PADDING, FACE_MIN_CROP_SIZE,
+)
+
+logger = logging.getLogger(__name__)
 
 @st.cache_resource
 def load_model():
@@ -41,14 +47,14 @@ def extract_faces(image_path, model=None):
         bbox = face.bbox.astype(int)
         x1, y1, x2, y2 = bbox
         h, w = img_rgb.shape[:2]
-        pad = int(max(x2 - x1, y2 - y1) * 0.1)
+        pad = int(max(x2 - x1, y2 - y1) * FACE_PADDING)
         x1 = max(0, x1 - pad)
         y1 = max(0, y1 - pad)
         x2 = min(w, x2 + pad)
         y2 = min(h, y2 + pad)
         crop = img_rgb[y1:y2, x1:x2]
-        
-        if crop.size == 0 or (x2 - x1) < 20 or (y2 - y1) < 20:
+
+        if crop.size == 0 or (x2 - x1) < FACE_MIN_CROP_SIZE or (y2 - y1) < FACE_MIN_CROP_SIZE:
             continue
 
         results.append({
@@ -75,7 +81,8 @@ def process_all_photos(photo_paths, progress_callback=None):
             if faces:
                 photos_with_faces += 1
             all_faces.extend(faces)
-        except Exception as e :
+        except Exception as e:
+            logger.warning("Gagal memproses foto '%s': %s", path, e)
             skipped += 1
             continue
     

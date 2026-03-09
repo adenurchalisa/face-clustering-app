@@ -1,6 +1,9 @@
+import logging
 import streamlit as st
 from src.face_extractor import process_all_photos
 from src.clustering import run_clustering_pipeline
+
+logger = logging.getLogger(__name__)
 
 
 def run_full_pipeline(photo_paths, progress_placeholder):
@@ -39,6 +42,7 @@ def run_full_pipeline(photo_paths, progress_placeholder):
         return True
 
     except Exception as e:
+        logger.error("Pipeline gagal: %s", e, exc_info=True)
         progress_bar.progress(100, text=f"Error: {str(e)}")
         st.error(f"Pipeline gagal: {e}")
         return False

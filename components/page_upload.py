@@ -2,6 +2,7 @@ import streamlit as st
 from src.utils import save_uploaded_files
 from src.drive_handler import download_from_drive
 from src.config import MAX_PHOTOS_UPLOAD
+from components import reset_session_state
 
 
 def render():
@@ -41,13 +42,8 @@ def render():
                     st.error("Tidak ada foto valid yang ditemukan")
                 else:
                     st.success(f"{len(photo_paths)} foto siap diproses")
+                    reset_session_state()
                     st.session_state.photos = photo_paths
-                    
-                    st.session_state.cluster = None
-                    st.session_state.noise_faces = None
-                    st.session_state.metrics = None
-                    st.session_state.face_stats = None
-                    
                     st.session_state.page = "processing"
                     st.rerun()
 
@@ -73,12 +69,7 @@ def render():
                     st.warning("Tidak ada foto yang ditemukan di link tersebut")
                 else:
                     st.success(f"{len(photo_paths)} foto berhasil diunduh")
+                    reset_session_state()
                     st.session_state.photos = photo_paths
-                    
-                    st.session_state.cluster = None
-                    st.session_state.noise_faces = None
-                    st.session_state.metrics = None
-                    st.session_state.face_stats = None
-                    
                     st.session_state.page = "processing"
                     st.rerun()

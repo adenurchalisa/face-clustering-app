@@ -1,5 +1,6 @@
 import streamlit as st
 from src.pipeline import run_full_pipeline
+from components import reset_session_state
 
 
 def render():
@@ -21,10 +22,7 @@ def render():
             st.session_state.page = "results"
             st.rerun()
         if st.button("🔄 Proses Ulang"):
-            st.session_state.clusters = None
-            st.session_state.noise_faces = None
-            st.session_state.metrics = None
-            st.session_state.face_stats = None
+            reset_session_state()
             st.rerun()
         return
 

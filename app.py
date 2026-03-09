@@ -1,4 +1,11 @@
+import logging
+import os
 import streamlit as st
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
 
 # Konfigurasi halaman — HARUS di baris paling pertama
 st.set_page_config(
@@ -8,12 +15,13 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Load custom CSS
-import os
+# Load custom CSS (hanya jika file tidak kosong)
 css_path = os.path.join("assets", "style.css")
 if os.path.exists(css_path):
     with open(css_path) as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+        css_content = f.read().strip()
+    if css_content:
+        st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
 
 # Session state initialization
 defaults = {

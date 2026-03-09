@@ -1,7 +1,10 @@
+import logging
 import os
 import re
 import subprocess
 from src.config import TEMP_DIR, SUPPORTED_FORMATS, MAX_PHOTOS_UPLOAD
+
+logger = logging.getLogger(__name__)
 
 
 def extract_drive_id(link):
@@ -49,9 +52,15 @@ def download_from_drive(link, output_dir=None):
             if result.returncode != 0 and not os.listdir(output_dir):
                 return [], f"Gagal download: {result.stderr[:200]}"
         else:
-            import gdown
             url = f"https://drive.google.com/uc?id={drive_id}"
-            gdown.download(url, output=output_dir, quiet=True)
+            result = subprocess.run(
+                ["gdown", url, "-O", output_dir],
+                capture_output=True,
+                text=True,
+                timeout=600,
+            )
+            if result.returncode != 0:
+                logger.warning("gdown single file gagal: %s", result.stderr[:500])
     except subprocess.TimeoutExpired:
         return [], "Download timeout. Coba upload ZIP langsung sebagai alternatif."
     except Exception as e:
