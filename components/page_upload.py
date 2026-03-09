@@ -42,6 +42,12 @@ def render():
                 else:
                     st.success(f"{len(photo_paths)} foto siap diproses")
                     st.session_state.photos = photo_paths
+                    
+                    st.session_state.cluster = None
+                    st.session_state.noise_faces = None
+                    st.session_state.metrics = None
+                    st.session_state.face_stats = None
+                    
                     st.session_state.page = "processing"
                     st.rerun()
 
@@ -68,5 +74,11 @@ def render():
                 else:
                     st.success(f"{len(photo_paths)} foto berhasil diunduh")
                     st.session_state.photos = photo_paths
+                    
+                    st.session_state.cluster = None
+                    st.session_state.noise_faces = None
+                    st.session_state.metrics = None
+                    st.session_state.face_stats = None
+                    
                     st.session_state.page = "processing"
                     st.rerun()
