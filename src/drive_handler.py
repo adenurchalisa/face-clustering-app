@@ -59,9 +59,13 @@ def download_from_drive(link, output_dir=None):
 
     # Kumpulkan foto valid
     photo_paths = []
+    reached_limit = False
     for root, dirs, files in os.walk(output_dir):
+        if reached_limit:
+            break
         for f in sorted(files):
             if len(photo_paths) >= MAX_PHOTOS_UPLOAD:
+                reached_limit = True
                 break
             if any(f.lower().endswith(ext) for ext in SUPPORTED_FORMATS):
                 photo_paths.append(os.path.join(root, f))
