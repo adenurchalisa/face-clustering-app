@@ -1,0 +1,246 @@
+/* ═══════════════════════════════════════════════
+   FaceCluster — Modern Light Theme
+   ═══════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ── Base ── */
+.stApp {
+    font-family: 'Inter', sans-serif;
+    background: #F8FAFF;
+}
+
+/* ── Sidebar ── */
+section[data-testid="stSidebar"] {
+    background: #FFFFFF !important;
+    border-right: 1px solid #E8EAFF;
+    box-shadow: 2px 0 12px rgba(79, 70, 229, 0.06);
+}
+
+section[data-testid="stSidebar"] > div {
+    padding-top: 0 !important;
+}
+
+/* ── Headings ── */
+h1 { font-weight: 800 !important; color: #0F172A !important; letter-spacing: -0.5px; }
+h2 { font-weight: 700 !important; color: #1E293B !important; }
+h3 { font-weight: 600 !important; color: #1E293B !important; }
+
+/* ── Buttons ── */
+.stButton > button {
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    transition: all 0.2s ease !important;
+    border: 1.5px solid #E2E8F0 !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+}
+
+.stButton > button:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15) !important;
+}
+
+.stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%) !important;
+    border: none !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35) !important;
+}
+
+.stButton > button[kind="primary"]:hover {
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.45) !important;
+}
+
+/* ── Metric Cards ── */
+[data-testid="metric-container"] {
+    background: #FFFFFF !important;
+    border: 1px solid #E8EAFF !important;
+    border-radius: 14px !important;
+    padding: 20px !important;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.06) !important;
+    transition: box-shadow 0.2s ease !important;
+}
+
+[data-testid="metric-container"]:hover {
+    box-shadow: 0 4px 16px rgba(79, 70, 229, 0.12) !important;
+}
+
+[data-testid="stMetricLabel"] {
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    color: #64748B !important;
+}
+
+[data-testid="stMetricValue"] {
+    font-size: 1.75rem !important;
+    font-weight: 800 !important;
+    color: #4F46E5 !important;
+}
+
+/* ── Expanders ── */
+[data-testid="stExpander"] {
+    background: #FFFFFF !important;
+    border: 1px solid #E8EAFF !important;
+    border-radius: 14px !important;
+    box-shadow: 0 1px 4px rgba(79, 70, 229, 0.05) !important;
+    overflow: hidden;
+}
+
+[data-testid="stExpander"] summary {
+    font-weight: 600 !important;
+    padding: 16px 20px !important;
+    color: #1E293B !important;
+}
+
+[data-testid="stExpander"] summary:hover {
+    background: #F5F3FF !important;
+}
+
+/* ── Tabs ── */
+.stTabs [data-baseweb="tab-list"] {
+    background: #EEF2FF !important;
+    border-radius: 12px !important;
+    padding: 4px !important;
+    gap: 2px !important;
+    border-bottom: none !important;
+}
+
+.stTabs [data-baseweb="tab"] {
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    color: #64748B !important;
+    padding: 8px 20px !important;
+    border: none !important;
+    transition: all 0.2s ease !important;
+}
+
+.stTabs [aria-selected="true"] {
+    background: #FFFFFF !important;
+    color: #4F46E5 !important;
+    box-shadow: 0 1px 4px rgba(79, 70, 229, 0.15) !important;
+}
+
+/* ── Progress Bar ── */
+.stProgress > div > div > div {
+    background: linear-gradient(90deg, #4F46E5, #7C3AED) !important;
+    border-radius: 99px !important;
+}
+
+.stProgress > div > div {
+    background: #EEF2FF !important;
+    border-radius: 99px !important;
+}
+
+/* ── Alerts ── */
+.stAlert {
+    border-radius: 12px !important;
+    border: none !important;
+    font-weight: 500 !important;
+}
+
+[data-testid="stNotificationContentInfo"] {
+    background: #EEF2FF !important;
+    color: #4F46E5 !important;
+}
+
+[data-testid="stNotificationContentSuccess"] {
+    background: #ECFDF5 !important;
+    color: #065F46 !important;
+}
+
+[data-testid="stNotificationContentError"] {
+    background: #FFF1F2 !important;
+    color: #9F1239 !important;
+}
+
+/* ── File Uploader ── */
+[data-testid="stFileUploader"] {
+    border-radius: 14px !important;
+}
+
+[data-testid="stFileUploaderDropzone"] {
+    background: #F5F3FF !important;
+    border: 2px dashed #A5B4FC !important;
+    border-radius: 14px !important;
+    transition: all 0.2s ease !important;
+}
+
+[data-testid="stFileUploaderDropzone"]:hover {
+    border-color: #4F46E5 !important;
+    background: #EEF2FF !important;
+}
+
+/* ── Text Input ── */
+.stTextInput > div > div > input {
+    border-radius: 10px !important;
+    border: 1.5px solid #E2E8F0 !important;
+    font-size: 0.9rem !important;
+    transition: border-color 0.2s ease !important;
+}
+
+.stTextInput > div > div > input:focus {
+    border-color: #4F46E5 !important;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1) !important;
+}
+
+/* ── Multiselect ── */
+[data-baseweb="select"] > div {
+    border-radius: 10px !important;
+    border: 1.5px solid #E2E8F0 !important;
+}
+
+/* ── Divider ── */
+hr {
+    border: none !important;
+    border-top: 1px solid #E8EAFF !important;
+    margin: 1.5rem 0 !important;
+}
+
+/* ── Images (face thumbnails) ── */
+[data-testid="stImage"] img {
+    border-radius: 10px !important;
+    border: 2px solid #E8EAFF !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+[data-testid="stImage"] img:hover {
+    transform: scale(1.04) !important;
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.2) !important;
+}
+
+/* ── Download Button ── */
+[data-testid="stDownloadButton"] > button {
+    background: linear-gradient(135deg, #10B981, #059669) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3) !important;
+    transition: all 0.2s ease !important;
+}
+
+[data-testid="stDownloadButton"] > button:hover {
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* ── Caption / small text ── */
+.stCaption, [data-testid="stCaptionContainer"] {
+    color: #64748B !important;
+    font-size: 0.8rem !important;
+}
+
+/* ── Spinner ── */
+[data-testid="stSpinner"] {
+    color: #4F46E5 !important;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #F1F5F9; border-radius: 99px; }
+::-webkit-scrollbar-thumb { background: #C7D2FE; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #4F46E5; }

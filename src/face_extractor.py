@@ -2,11 +2,19 @@ import logging
 import numpy as np
 import cv2
 import streamlit as st
+from PIL import Image
 from insightface.app import FaceAnalysis
 from src.config import (
     FACE_MODEL_NAME, FACE_DET_SIZE, FACE_DET_THRESHOLD,
     FACE_PADDING, FACE_MIN_CROP_SIZE,
 )
+
+# Aktifkan support HEIC/HEIF lewat PIL agar bisa dibaca langsung
+try:
+    from pillow_heif import register_heif_opener
+    register_heif_opener()
+except ImportError:
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -29,11 +37,14 @@ def extract_faces(image_path, model=None):
     if model is None:
         model = load_model()
 
-    img = cv2.imread(image_path)
-    if img is None:
-        return []
+    # Gunakan PIL untuk membaca gambar — jauh lebih robust di Windows:
+    # menangani path Unicode, HEIC/HEIF, dan berbagai format lainnya
+    try:
+        pil_img = Image.open(image_path).convert("RGB")
+        img_rgb = np.array(pil_img)
+    except Exception as e:
+        raise RuntimeError(f"Gagal membaca file: {e}") from e
 
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     faces = model.get(img_rgb)
 
     results = []
