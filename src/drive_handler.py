@@ -134,9 +134,12 @@ def download_from_drive(link, output_dir=None, progress_callback=None):
         output_dir = os.path.join(TEMP_DIR, "drive_photos")
 
     # Bersihkan sisa sesi sebelumnya
+    # ignore_errors=True: Windows mengunci file yang sedang dipakai proses lain,
+    # file lama yang terkunci dibiarkan — tidak mempengaruhi hasil karena
+    # photo_paths hanya berisi file yang baru diunduh
     if os.path.exists(output_dir):
-        shutil.rmtree(output_dir)
-    os.makedirs(output_dir)
+        shutil.rmtree(output_dir, ignore_errors=True)
+    os.makedirs(output_dir, exist_ok=True)
 
     drive_id, link_type = extract_drive_id(link)
     if drive_id is None:
