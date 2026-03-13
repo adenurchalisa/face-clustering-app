@@ -20,14 +20,8 @@ FACE_DET_THRESHOLD = 0.5            # Confidence threshold deteksi wajah
 FACE_PADDING       = 0.1            # Padding crop wajah (10% dari bounding box)
 FACE_MIN_CROP_SIZE = 20             # Ukuran minimum crop wajah dalam pixel
 
-# UMAP
-UMAP_N_COMPONENTS  = 30
-UMAP_N_NEIGHBORS   = 30
-UMAP_MIN_DIST      = 0.0
-UMAP_METRIC        = "cosine"
-UMAP_RANDOM_STATE  = 42
-
 # HDBSCAN — dari hasil eksperimen NB05 (Final)
+# Langsung ke embedding 512-dim (L2-normalized), tanpa UMAP
 HDBSCAN_MIN_CLUSTER_SIZE         = 50           # Minimum anggota per cluster
 HDBSCAN_MIN_SAMPLES              = 5            # Kontrol konservatisme noise
 HDBSCAN_CLUSTER_SELECTION_METHOD = "eom"        # "eom" atau "leaf"

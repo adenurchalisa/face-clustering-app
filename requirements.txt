@@ -1,7 +1,6 @@
 streamlit>=1.30.0
 insightface>=0.7.3
 onnxruntime>=1.16.0
-# umap-learn>=0.5.5
 hdbscan>=0.8.33
 numpy>=1.24.0
 opencv-python-headless>=4.8.0

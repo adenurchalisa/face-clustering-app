@@ -26,7 +26,7 @@ def run_full_pipeline(photo_paths, progress_placeholder):
             progress_bar.progress(100, text="Tidak ada wajah terdeteksi!")
             return False
 
-        # STEP 2 & 3: UMAP + HDBSCAN (50-100%)
+        # STEP 2: HDBSCAN langsung ke embeddings (50-100%)
         def cluster_progress(current, total, msg):
             pct = 50 + int((current / total) * 50)
             progress_bar.progress(pct, text=msg)
