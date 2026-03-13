@@ -118,4 +118,4 @@ def numpy_to_pil(img_array):
 def cleanup_temp():
     """Hapus semua file temporer."""
     if os.path.exists(TEMP_DIR):
-        shutil.rmtree(TEMP_DIR)
+        shutil.rmtree(TEMP_DIR, ignore_errors=True)
