@@ -5,7 +5,7 @@ import streamlit as st
 from insightface.app import FaceAnalysis
 from src.config import (
     FACE_MODEL_NAME, FACE_DET_SIZE, FACE_DET_THRESHOLD,
-    FACE_PADDING, FACE_MIN_CROP_SIZE,
+    FACE_PADDING, FACE_MIN_CROP_SIZE, MAX_IMAGE_INPUT_SIZE,
 )
 
 logger = logging.getLogger(__name__)
@@ -32,6 +32,13 @@ def extract_faces(image_path, model=None):
     img = cv2.imread(image_path)
     if img is None:
         return []
+
+    # Resize foto besar sebelum deteksi — speedup signifikan tanpa kehilangan akurasi
+    # (InsightFace tetap resize ke 640x640 secara internal)
+    h, w = img.shape[:2]
+    if max(h, w) > MAX_IMAGE_INPUT_SIZE:
+        scale = MAX_IMAGE_INPUT_SIZE / max(h, w)
+        img = cv2.resize(img, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
 
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     faces = model.get(img_rgb)

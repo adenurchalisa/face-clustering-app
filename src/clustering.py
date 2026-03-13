@@ -16,10 +16,12 @@ def reduce_dimensions(embeddings):
     n_samples = len(embeddings)
     if n_samples < 2:
         return embeddings, None
-    n_neighbors = min(UMAP_N_NEIGHBORS, n_samples - 1)
-   
+    # n_neighbors & n_components adaptif terhadap ukuran dataset
+    n_neighbors = min(UMAP_N_NEIGHBORS, max(5, n_samples // 10), n_samples - 1)
+    n_components = min(UMAP_N_COMPONENTS, max(2, n_samples // 5), n_samples - 1)
+
     reducer = umap.UMAP(
-        n_components=UMAP_N_COMPONENTS,
+        n_components=n_components,
         n_neighbors=n_neighbors,
         min_dist=UMAP_MIN_DIST,
         metric=UMAP_METRIC,

@@ -26,5 +26,6 @@ TEMP_DIR = os.path.join(tempfile.gettempdir(), "facecluster")
 # --- Konstanta UI & Deteksi ---
 FACE_PADDING = 0.1          # Padding wajah saat crop (10% dari ukuran bounding box)
 FACE_MIN_CROP_SIZE = 20     # Ukuran minimum crop wajah dalam pixel
-MAX_CLUSTER_PREVIEW = 18    # Maksimum wajah yang ditampilkan per cluster di gallery
+MAX_IMAGE_INPUT_SIZE = 1920 # Resize foto besar ke max dimensi ini sebelum deteksi (speedup)
+MAX_CLUSTER_PREVIEW = 12    # Maksimum foto penuh yang ditampilkan per cluster di gallery
 MAX_NOISE_PREVIEW = 12      # Maksimum wajah noise yang ditampilkan
