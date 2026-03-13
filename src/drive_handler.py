@@ -5,13 +5,14 @@ import shutil
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload
+import requests
+from googleapiclient.discovery import build  # hanya untuk list files
 
 from src.config import GOOGLE_API_KEY, TEMP_DIR, SUPPORTED_FORMATS, MAX_PHOTOS_UPLOAD
 
 logger = logging.getLogger(__name__)
-MAX_WORKERS = 10  # jumlah file yang diunduh secara paralel
+MAX_WORKERS = 20          # worker paralel
+DOWNLOAD_TIMEOUT = 60     # detik timeout per file
 
 
 def _get_api_key():
@@ -83,17 +84,15 @@ def _list_files_recursive(service, folder_id):
 
 
 def _download_file(api_key, file_id, dest_path):
-    """Download satu file dari Drive ke dest_path.
-    Membuat service sendiri agar thread-safe.
-    num_retries=0 agar gagal cepat tanpa menunggu exponential backoff.
+    """Download satu file dari Drive langsung via requests (tanpa build() per file).
+    Jauh lebih cepat karena tidak perlu fetch discovery document setiap kali.
     """
-    service = build("drive", "v3", developerKey=api_key, cache_discovery=False)
-    request = service.files().get_media(fileId=file_id)
-    with open(dest_path, "wb") as f:
-        downloader = MediaIoBaseDownload(f, request)
-        done = False
-        while not done:
-            _, done = downloader.next_chunk(num_retries=0)
+    url = f"https://www.googleapis.com/drive/v3/files/{file_id}?alt=media&key={api_key}"
+    with requests.get(url, stream=True, timeout=DOWNLOAD_TIMEOUT) as r:
+        r.raise_for_status()
+        with open(dest_path, "wb") as f:
+            for chunk in r.iter_content(chunk_size=1024 * 1024):  # 1MB chunks
+                f.write(chunk)
 
 
 def _download_all_parallel(api_key, files, output_dir, progress_callback=None):
