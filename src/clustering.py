@@ -38,9 +38,13 @@ def cluster_faces(reduced_embeddings):
             "silhouette": None,
         }
         
+    n_samples = len(reduced_embeddings)
+    min_cluster_size = max(2, min(HDBSCAN_MIN_CLUSTER_SIZE, n_samples // 5))
+    min_samples = max(1, min(HDBSCAN_MIN_SAMPLES, min_cluster_size))
+
     clusterer = hdbscan.HDBSCAN(
-        min_cluster_size=HDBSCAN_MIN_CLUSTER_SIZE,
-        min_samples=HDBSCAN_MIN_SAMPLES,
+        min_cluster_size=min_cluster_size,
+        min_samples=min_samples,
         cluster_selection_method=HDBSCAN_CLUSTER_SELECTION_METHOD,
     )
     labels = clusterer.fit_predict(reduced_embeddings)

@@ -35,6 +35,7 @@ def render():
                 st.caption(f"... dan {len(uploaded_files) - 5} file lainnya")
 
             if st.button("🔄 Proses Foto", type="primary", use_container_width=True, key="btn_upload"):
+                reset_session_state()
                 with st.spinner("Menyimpan file..."):
                     photo_paths = save_uploaded_files(uploaded_files)
 
@@ -42,7 +43,6 @@ def render():
                     st.error("Tidak ada foto valid yang ditemukan")
                 else:
                     st.success(f"{len(photo_paths)} foto siap diproses")
-                    reset_session_state()
                     st.session_state.photos = photo_paths
                     st.session_state.page = "processing"
                     st.rerun()
@@ -60,6 +60,7 @@ def render():
 
         if drive_link:
             if st.button("🔄 Download & Proses", type="primary", use_container_width=True, key="btn_drive"):
+                reset_session_state()
                 with st.spinner("Mengunduh dari Google Drive..."):
                     photo_paths, error = download_from_drive(drive_link)
 
@@ -69,7 +70,6 @@ def render():
                     st.warning("Tidak ada foto yang ditemukan di link tersebut")
                 else:
                     st.success(f"{len(photo_paths)} foto berhasil diunduh")
-                    reset_session_state()
                     st.session_state.photos = photo_paths
                     st.session_state.page = "processing"
                     st.rerun()
