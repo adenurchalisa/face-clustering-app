@@ -84,14 +84,40 @@ def _list_files_recursive(service, folder_id):
 
 
 def _download_file(api_key, file_id, dest_path):
-    """Download satu file dari Drive langsung via requests (tanpa build() per file).
-    Jauh lebih cepat karena tidak perlu fetch discovery document setiap kali.
+    """Download satu file dari Drive menggunakan URL download langsung.
+    Bekerja untuk file 'Anyone with the link' tanpa memerlukan OAuth.
+    Menangani konfirmasi virus-scan Google untuk file besar (>25 MB).
     """
-    url = f"https://www.googleapis.com/drive/v3/files/{file_id}?alt=media&key={api_key}"
-    with requests.get(url, stream=True, timeout=DOWNLOAD_TIMEOUT) as r:
-        r.raise_for_status()
-        with open(dest_path, "wb") as f:
-            for chunk in r.iter_content(chunk_size=1024 * 1024):  # 1MB chunks
+    session = requests.Session()
+    url = f"https://drive.google.com/uc?export=download&id={file_id}"
+
+    response = session.get(url, stream=True, timeout=DOWNLOAD_TIMEOUT)
+    response.raise_for_status()
+
+    # Untuk file besar, Google Drive mengembalikan halaman HTML konfirmasi.
+    # Deteksi dari Content-Type dan ekstrak token konfirmasi.
+    content_type = response.headers.get("Content-Type", "")
+    if "text/html" in content_type:
+        # Coba ekstrak confirm token (format lama: confirm=XXXX)
+        confirm_match = re.search(r'confirm=([0-9A-Za-z_\-]+)', response.text)
+        if confirm_match:
+            confirm_token = confirm_match.group(1)
+            url = f"https://drive.google.com/uc?export=download&id={file_id}&confirm={confirm_token}"
+        else:
+            # Format baru: tombol "Download anyway" dengan UUID
+            uuid_match = re.search(r'uuid=([0-9A-Za-z_\-]+)', response.text)
+            if uuid_match:
+                uuid = uuid_match.group(1)
+                url = f"https://drive.google.com/uc?export=download&id={file_id}&confirm=t&uuid={uuid}"
+            else:
+                # Fallback: tambahkan confirm=t saja
+                url = f"https://drive.google.com/uc?export=download&id={file_id}&confirm=t"
+        response = session.get(url, stream=True, timeout=DOWNLOAD_TIMEOUT)
+        response.raise_for_status()
+
+    with open(dest_path, "wb") as f:
+        for chunk in response.iter_content(chunk_size=1024 * 1024):
+            if chunk:
                 f.write(chunk)
 
 
