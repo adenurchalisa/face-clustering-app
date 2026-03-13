@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import shutil
@@ -9,6 +10,7 @@ from googleapiclient.http import MediaIoBaseDownload
 
 from src.config import GOOGLE_API_KEY, TEMP_DIR, SUPPORTED_FORMATS, MAX_PHOTOS_UPLOAD
 
+logger = logging.getLogger(__name__)
 MAX_WORKERS = 10  # jumlah file yang diunduh secara paralel
 
 
@@ -83,6 +85,7 @@ def _list_files_recursive(service, folder_id):
 def _download_file(api_key, file_id, dest_path):
     """Download satu file dari Drive ke dest_path.
     Membuat service sendiri agar thread-safe.
+    num_retries=0 agar gagal cepat tanpa menunggu exponential backoff.
     """
     service = build("drive", "v3", developerKey=api_key, cache_discovery=False)
     request = service.files().get_media(fileId=file_id)
@@ -90,12 +93,13 @@ def _download_file(api_key, file_id, dest_path):
         downloader = MediaIoBaseDownload(f, request)
         done = False
         while not done:
-            _, done = downloader.next_chunk()
+            _, done = downloader.next_chunk(num_retries=0)
 
 
 def _download_all_parallel(api_key, files, output_dir, progress_callback=None):
-    """Download semua file secara paralel. Return: list of path yang berhasil."""
+    """Download semua file secara paralel. Return: (list of path, first_error)."""
     photo_paths = []
+    first_error = [None]
     lock = threading.Lock()
     completed = [0]
 
@@ -107,7 +111,18 @@ def _download_all_parallel(api_key, files, output_dir, progress_callback=None):
         try:
             _download_file(api_key, file_meta["id"], dest_path)
             return dest_path, file_meta["name"]
-        except Exception:
+        except Exception as e:
+            logger.warning("Gagal unduh '%s': %s", file_meta["name"], e)
+            # Simpan error pertama untuk ditampilkan ke user
+            with lock:
+                if first_error[0] is None:
+                    first_error[0] = str(e)
+            # Hapus file parsial
+            if os.path.exists(dest_path):
+                try:
+                    os.remove(dest_path)
+                except OSError:
+                    pass
             return None, file_meta["name"]
 
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
@@ -121,7 +136,7 @@ def _download_all_parallel(api_key, files, output_dir, progress_callback=None):
                 if progress_callback:
                     progress_callback(completed[0], len(files), filename)
 
-    return photo_paths
+    return photo_paths, first_error[0]
 
 
 def download_from_drive(link, output_dir=None, progress_callback=None):
@@ -168,9 +183,10 @@ def download_from_drive(link, output_dir=None, progress_callback=None):
     files = files[:MAX_PHOTOS_UPLOAD]
     api_key = _get_api_key()
 
-    photo_paths = _download_all_parallel(api_key, files, output_dir, progress_callback)
+    photo_paths, download_error = _download_all_parallel(api_key, files, output_dir, progress_callback)
 
     if not photo_paths:
-        return [], "Semua file gagal diunduh. Pastikan file tidak dibatasi aksesnya."
+        detail = f" Detail: {download_error}" if download_error else ""
+        return [], f"Semua file gagal diunduh. Pastikan folder di-set 'Anyone with the link'.{detail}"
 
     return photo_paths, None
