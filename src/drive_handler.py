@@ -83,10 +83,34 @@ def _list_files_recursive(service, folder_id):
     return files
 
 
+_HTML_SIGNATURES = (b"<!DOCTYPE", b"<!doctype", b"<html", b"<HTML")
+
+
+def _is_html(data: bytes) -> bool:
+    stripped = data.lstrip()
+    return any(stripped.startswith(sig) for sig in _HTML_SIGNATURES)
+
+
+def _extract_confirm_url(html_text: str, file_id: str) -> str:
+    """Ekstrak URL download dengan token konfirmasi dari halaman HTML Google Drive."""
+    # Format baru (2024+): /uc?id=...&export=download&confirm=t&uuid=...
+    uuid_match = re.search(r'uuid=([0-9A-Za-z_\-]+)', html_text)
+    if uuid_match:
+        return (f"https://drive.google.com/uc?export=download"
+                f"&id={file_id}&confirm=t&uuid={uuid_match.group(1)}")
+    # Format lama: confirm=XXXX
+    confirm_match = re.search(r'confirm=([0-9A-Za-z_\-]+)', html_text)
+    if confirm_match:
+        return (f"https://drive.google.com/uc?export=download"
+                f"&id={file_id}&confirm={confirm_match.group(1)}")
+    # Fallback
+    return f"https://drive.google.com/uc?export=download&id={file_id}&confirm=t"
+
+
 def _download_file(api_key, file_id, dest_path):
-    """Download satu file dari Drive menggunakan URL download langsung.
-    Bekerja untuk file 'Anyone with the link' tanpa memerlukan OAuth.
-    Menangani konfirmasi virus-scan Google untuk file besar (>25 MB).
+    """Download satu file dari Drive via URL langsung.
+    Mendeteksi HTML dari bytes pertama (bukan Content-Type) agar
+    tidak salah simpan halaman konfirmasi sebagai file gambar.
     """
     session = requests.Session()
     url = f"https://drive.google.com/uc?export=download&id={file_id}"
@@ -94,28 +118,36 @@ def _download_file(api_key, file_id, dest_path):
     response = session.get(url, stream=True, timeout=DOWNLOAD_TIMEOUT)
     response.raise_for_status()
 
-    # Untuk file besar, Google Drive mengembalikan halaman HTML konfirmasi.
-    # Deteksi dari Content-Type dan ekstrak token konfirmasi.
-    content_type = response.headers.get("Content-Type", "")
-    if "text/html" in content_type:
-        # Coba ekstrak confirm token (format lama: confirm=XXXX)
-        confirm_match = re.search(r'confirm=([0-9A-Za-z_\-]+)', response.text)
-        if confirm_match:
-            confirm_token = confirm_match.group(1)
-            url = f"https://drive.google.com/uc?export=download&id={file_id}&confirm={confirm_token}"
-        else:
-            # Format baru: tombol "Download anyway" dengan UUID
-            uuid_match = re.search(r'uuid=([0-9A-Za-z_\-]+)', response.text)
-            if uuid_match:
-                uuid = uuid_match.group(1)
-                url = f"https://drive.google.com/uc?export=download&id={file_id}&confirm=t&uuid={uuid}"
-            else:
-                # Fallback: tambahkan confirm=t saja
-                url = f"https://drive.google.com/uc?export=download&id={file_id}&confirm=t"
-        response = session.get(url, stream=True, timeout=DOWNLOAD_TIMEOUT)
+    # Baca chunk pertama untuk mendeteksi apakah response adalah HTML
+    first_chunk = b""
+    for chunk in response.iter_content(chunk_size=8192):
+        if chunk:
+            first_chunk = chunk
+            break
+
+    if _is_html(first_chunk):
+        # Google mengembalikan halaman konfirmasi — ekstrak token & ulangi
+        html_text = first_chunk.decode("utf-8", errors="ignore")
+        # Baca sisa halaman HTML untuk mencari token
+        for chunk in response.iter_content(chunk_size=65536):
+            if chunk:
+                html_text += chunk.decode("utf-8", errors="ignore")
+            if len(html_text) > 200_000:
+                break
+        confirm_url = _extract_confirm_url(html_text, file_id)
+        response = session.get(confirm_url, stream=True, timeout=DOWNLOAD_TIMEOUT)
         response.raise_for_status()
+        first_chunk = b""
+        for chunk in response.iter_content(chunk_size=8192):
+            if chunk:
+                first_chunk = chunk
+                break
+        if _is_html(first_chunk):
+            raise RuntimeError("Google Drive mengembalikan HTML, bukan file gambar. "
+                               "Pastikan folder di-set 'Anyone with the link'.")
 
     with open(dest_path, "wb") as f:
+        f.write(first_chunk)
         for chunk in response.iter_content(chunk_size=1024 * 1024):
             if chunk:
                 f.write(chunk)
