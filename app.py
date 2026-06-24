@@ -18,7 +18,7 @@ st.set_page_config(
 # Load custom CSS (hanya jika file tidak kosong)
 css_path = os.path.join("assets", "style.css")
 if os.path.exists(css_path):
-    with open(css_path) as f:
+    with open(css_path, encoding="utf-8") as f:
         css_content = f.read().strip()
     if css_content:
         st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)

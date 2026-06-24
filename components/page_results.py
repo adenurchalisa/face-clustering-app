@@ -22,8 +22,8 @@ def _load_full_photo(path, max_dim=1024):
 
 
 def render():
-    clusters = st.session_state.get("clusters")
-    metrics = st.session_state.get("metrics")
+    clusters   = st.session_state.get("clusters")
+    metrics    = st.session_state.get("metrics")
     noise_faces = st.session_state.get("noise_faces", [])
 
     if not clusters:
@@ -33,49 +33,58 @@ def render():
             st.rerun()
         return
 
-    st.header("📊 Hasil Pengelompokan")
+    # ── Header ──
+    st.markdown("""
+    <div style="margin-bottom: 8px;">
+        <h2 style="font-weight:800; color:#0F172A; margin:0;">📊 Hasil Pengelompokan</h2>
+        <p style="color:#64748B; margin:4px 0 0 0; font-size:0.9rem;">
+            Wajah berhasil dideteksi dan dikelompokkan secara otomatis
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # Metrik utama
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Cluster", metrics["n_clusters"])
-    col2.metric("Coverage", f"{metrics['coverage_pct']}%")
-    col3.metric("Noise", f"{metrics['noise_pct']}%")
-    col4.metric("Silhouette", metrics.get("silhouette") or "N/A")
+    # ── Metrik utama ──
+    col1, col2, col3, col4 = st.columns(4, gap="medium")
+    col1.metric("👥 Cluster", metrics["n_clusters"])
+    col2.metric("✅ Coverage", f"{metrics['coverage_pct']}%")
+    col3.metric("🔇 Noise", f"{metrics['noise_pct']}%")
+    col4.metric("📐 Silhouette", metrics.get("silhouette") or "N/A")
 
     st.markdown("---")
 
-    # Multi-select download
+    # ── Multi-select download ──
     cluster_ids = list(clusters.keys())
     cluster_options = {
         f"Cluster {cid + 1} ({len(set(f['source_photo'] for f in clusters[cid]))} foto)": cid
         for cid in cluster_ids
     }
 
+    st.markdown("#### 📦 Download Batch")
     selected_labels = st.multiselect(
-        "Pilih cluster untuk download:",
+        "Pilih cluster untuk diunduh sekaligus:",
         options=list(cluster_options.keys()),
         help="Pilih satu atau lebih cluster, lalu klik tombol download",
     )
 
     if selected_labels:
         selected_ids = [cluster_options[label] for label in selected_labels]
-        zip_buffer = create_cluster_zip(clusters, selected_ids)
+        zip_buffer   = create_cluster_zip(clusters, selected_ids)
 
-        col_dl1, col_dl2 = st.columns([3, 1])
-        with col_dl1:
-            st.info(f"{len(selected_ids)} cluster dipilih")
-        with col_dl2:
+        col_info, col_dl = st.columns([3, 1])
+        with col_info:
+            st.info(f"{len(selected_ids)} cluster dipilih · siap diunduh")
+        with col_dl:
             st.download_button(
                 label="↓ Download ZIP",
                 data=zip_buffer,
                 file_name="facecluster_results.zip",
                 mime="application/zip",
-                type="primary",
             )
 
     st.markdown("---")
+    st.markdown("#### 👤 Gallery per Cluster")
 
-    # Gallery per cluster
+    # ── Gallery per cluster ──
     for cid in cluster_ids:
         faces = clusters[cid]
         unique_photo_paths = list(dict.fromkeys(f["source_photo"] for f in faces))
@@ -131,26 +140,30 @@ def render():
                     f"Menampilkan {MAX_CLUSTER_PREVIEW} dari {len(unique_photo_paths)} foto"
                 )
 
-    # Noise section
+    # ── Noise section ──
     if noise_faces:
         st.markdown("---")
-        with st.expander(f"🔇 Noise — {len(noise_faces)} wajah tidak terkelompok"):
-            st.caption(
-                "Wajah-wajah ini tidak masuk ke cluster manapun. "
-                "Bisa karena hanya muncul sekali atau kualitas deteksi rendah."
+        with st.expander(f"🔇 Tidak Terkelompok — {len(noise_faces)} wajah"):
+            st.markdown(
+                "<p style='color:#94A3B8; font-size:0.85rem;'>"
+                "Wajah-wajah ini tidak masuk ke cluster manapun — "
+                "biasanya hanya muncul sekali atau kualitas deteksinya rendah."
+                "</p>",
+                unsafe_allow_html=True,
             )
             cols = st.columns(6)
             for i, face in enumerate(noise_faces[:MAX_NOISE_PREVIEW]):
                 with cols[i % 6]:
-                    pil_img = numpy_to_pil(face["crop"])
-                    st.image(pil_img, use_container_width=True)
+                    st.image(numpy_to_pil(face["crop"]), use_container_width=True)
 
             if len(noise_faces) > MAX_NOISE_PREVIEW:
-                st.caption(f"Menampilkan {MAX_NOISE_PREVIEW} dari {len(noise_faces)} wajah noise")
+                st.caption(f"Menampilkan {MAX_NOISE_PREVIEW} dari {len(noise_faces)} wajah")
 
-    # Reset
+    # ── Reset ──
     st.markdown("---")
-    if st.button("🔄 Proses Foto Baru", use_container_width=True):
-        reset_session_state()
-        st.session_state.page = "upload"
-        st.rerun()
+    _, col_btn, _ = st.columns([1, 2, 1])
+    with col_btn:
+        if st.button("🔄 Proses Foto Baru", use_container_width=True):
+            reset_session_state()
+            st.session_state.page = "upload"
+            st.rerun()

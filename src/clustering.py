@@ -40,9 +40,12 @@ def reduce_dimensions(embeddings):
         return embeddings
 
     n_neighbors = min(UMAP_N_NEIGHBORS, n_faces - 1)
+    # n_components harus <= n_faces - 2, jika tidak spectral init UMAP gagal
+    # (scipy eigsh butuh k < N-1 untuk matrix sparse N x N)
+    n_components = min(UMAP_N_COMPONENTS, max(2, n_faces - 2))
 
     reducer = umap.UMAP(
-        n_components=min(UMAP_N_COMPONENTS, n_faces - 1),
+        n_components=n_components,
         n_neighbors=n_neighbors,
         metric="cosine",
         min_dist=UMAP_MIN_DIST,
