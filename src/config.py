@@ -1,24 +1,43 @@
+"""
+Hyperparameter dari hasil eksperimen NB09 (UMAP + HDBSCAN).
+
+Konfigurasi terbaik (NB09 - Best Coverage):
+  Coverage Rate    : 99.3%
+  Silhouette       : 0.9041
+  n_clusters       : 95
+  n_components     : 30
+  n_neighbors      : 30
+  min_cluster_size : 20
+  min_samples      : 20
+"""
+
 import os
-import tempfile
+
+# Google Drive API
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
 
 # InsightFace
-FACE_MODEL_NAME = "buffalo_l"
-FACE_DET_SIZE = (640, 640)
-FACE_DET_THRESHOLD = 0.5
+FACE_MODEL_NAME      = "buffalo_l"
+FACE_DET_SIZE        = (640, 640)
+FACE_DET_THRESHOLD   = 0.5
+FACE_PADDING         = 0.1
+FACE_MIN_CROP_SIZE   = 20
+MAX_IMAGE_INPUT_SIZE = 1920  # Resize foto besar ke max dimensi ini sebelum deteksi (speedup)
 
-# --- HDBSCAN ---
-HDBSCAN_MIN_CLUSTER_SIZE = 20
-HDBSCAN_MIN_SAMPLES = 20
+# UMAP — konfigurasi terbaik dari NB09 (TETAP, tidak berubah antar dataset)
+UMAP_N_COMPONENTS = 30
+UMAP_N_NEIGHBORS  = 30
+UMAP_MIN_DIST     = 0.0
+UMAP_RANDOM_STATE = 42
+
+# HDBSCAN — parameter dihitung adaptif di clustering.py
 HDBSCAN_CLUSTER_SELECTION_METHOD = "eom"
 
-# --- Batas Aplikasi ---
-MAX_PHOTOS_UPLOAD = 5000
+# App limits
+MAX_PHOTOS_UPLOAD = 3000
 SUPPORTED_FORMATS = [".jpg", ".jpeg", ".png", ".heic", ".heif"]
-TEMP_DIR = os.path.join(tempfile.gettempdir(), "facecluster")
+TEMP_DIR          = "/tmp/facecluster"
 
-# --- Konstanta UI & Deteksi ---
-FACE_PADDING = 0.1          # Padding wajah saat crop (10% dari ukuran bounding box)
-FACE_MIN_CROP_SIZE = 20     # Ukuran minimum crop wajah dalam pixel
-MAX_IMAGE_INPUT_SIZE = 1920 # Resize foto besar ke max dimensi ini sebelum deteksi (speedup)
-MAX_CLUSTER_PREVIEW = 12    # Maksimum foto penuh yang ditampilkan per cluster di gallery
-MAX_NOISE_PREVIEW = 12      # Maksimum wajah noise yang ditampilkan
+# UI
+MAX_CLUSTER_PREVIEW = 200
+MAX_NOISE_PREVIEW   = 12
