@@ -38,7 +38,9 @@ def extract_faces(image_path, model=None):
     h, w = img.shape[:2]
     if max(h, w) > MAX_IMAGE_INPUT_SIZE:
         scale = MAX_IMAGE_INPUT_SIZE / max(h, w)
-        img = cv2.resize(img, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
+        new_w = max(1, int(round(w * scale)))
+        new_h = max(1, int(round(h * scale)))
+        img = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_AREA)
 
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     faces = model.get(img_rgb)
