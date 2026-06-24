@@ -6,11 +6,18 @@ from src.config import MAX_CLUSTER_PREVIEW, MAX_NOISE_PREVIEW
 from components import reset_session_state
 
 
-def _load_full_photo(path):
-    """Baca foto penuh sebagai PIL Image (RGB)."""
+@st.cache_data(show_spinner=False)
+def _load_full_photo(path, max_dim=1024):
+    """Baca foto penuh sebagai PIL Image (RGB), dengan downscale untuk preview."""
     img = cv2.imread(path)
     if img is None:
         return None
+    h, w = img.shape[:2]
+    if max(h, w) > max_dim:
+        scale = max_dim / max(h, w)
+        new_w = max(1, int(round(w * scale)))
+        new_h = max(1, int(round(h * scale)))
+        img = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_AREA)
     return numpy_to_pil(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 
 
