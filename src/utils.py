@@ -96,11 +96,14 @@ def create_cluster_zip(clusters, selected_ids):
             folder_name = f"Cluster_{cid + 1}"
             faces = clusters[cid]
 
-            # Tambah preview.jpg — wajah representatif (skor deteksi tertinggi)
+            if not faces:
+                continue
+
+            # Tambah _preview.jpg — wajah representatif (skor deteksi tertinggi)
             rep_face = max(faces, key=lambda f: f["det_score"])
             preview_buf = io.BytesIO()
             numpy_to_pil(rep_face["crop"]).save(preview_buf, "JPEG", quality=90)
-            zf.writestr(f"{folder_name}/preview.jpg", preview_buf.getvalue())
+            zf.writestr(f"{folder_name}/_preview.jpg", preview_buf.getvalue())
 
             # Tambah foto asli (unik)
             added_photos = set()
