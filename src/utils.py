@@ -3,6 +3,7 @@ import os
 import io
 import zipfile
 import shutil
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from PIL import Image
 import numpy as np
 from src.config import TEMP_DIR, SUPPORTED_FORMATS, MAX_PHOTOS_UPLOAD
@@ -10,56 +11,74 @@ from src.config import TEMP_DIR, SUPPORTED_FORMATS, MAX_PHOTOS_UPLOAD
 logger = logging.getLogger(__name__)
 
 HEIC_FORMATS = (".heic", ".heif")
+UPLOAD_MAX_WORKERS = 8
+
+
+def _write_regular_file(f, output_dir):
+    """Tulis satu file upload (biasa atau HEIC) ke disk. Return: path foto, atau None."""
+    path = os.path.join(output_dir, f.name)
+    with open(path, "wb") as out:
+        out.write(f.getbuffer())
+
+    if f.name.lower().endswith(HEIC_FORMATS):
+        return convert_heic_to_jpg(path)
+    return path
+
+
+def _extract_zip_entry(zip_bytes, entry, output_dir):
+    """Ekstrak satu entry ZIP ke disk. Return: path foto, atau None."""
+    with zipfile.ZipFile(io.BytesIO(zip_bytes), "r") as zf:
+        # Guard: Zip Slip protection
+        safe_path = os.path.realpath(os.path.join(output_dir, entry))
+        if not safe_path.startswith(os.path.realpath(output_dir)):
+            return None
+
+        extracted = zf.extract(entry, output_dir)
+
+    if entry.lower().endswith(HEIC_FORMATS):
+        return convert_heic_to_jpg(extracted)
+    return extracted
 
 
 def save_uploaded_files(uploaded_files):
-    """Simpan file upload user ke direktori temporer. Return: list of photo paths."""
+    """Simpan file upload user ke direktori temporer (paralel). Return: list of photo paths."""
     output_dir = os.path.join(TEMP_DIR, "uploads")
     os.makedirs(output_dir, exist_ok=True)
 
-    photo_paths = []
+    tasks = []
+    n_planned = 0
 
     for f in uploaded_files:
-        if len(photo_paths) >= MAX_PHOTOS_UPLOAD:
+        if n_planned >= MAX_PHOTOS_UPLOAD:
             break
 
         name_lower = f.name.lower()
 
-        # Handle ZIP
         if name_lower.endswith(".zip"):
-            zip_bytes = io.BytesIO(f.getbuffer())
-            with zipfile.ZipFile(zip_bytes, "r") as zf:
+            zip_bytes = bytes(f.getbuffer())
+            with zipfile.ZipFile(io.BytesIO(zip_bytes), "r") as zf:
                 for entry in zf.namelist():
-                    if len(photo_paths) >= MAX_PHOTOS_UPLOAD:
+                    if n_planned >= MAX_PHOTOS_UPLOAD:
                         break
-
                     if not any(entry.lower().endswith(ext) for ext in SUPPORTED_FORMATS):
                         continue
+                    tasks.append((_extract_zip_entry, (zip_bytes, entry, output_dir)))
+                    n_planned += 1
 
-                    # Guard: Zip Slip protection
-                    safe_path = os.path.realpath(os.path.join(output_dir, entry))
-                    if not safe_path.startswith(os.path.realpath(output_dir)):
-                        continue
-
-                    extracted = zf.extract(entry, output_dir)
-                    photo_paths.append(extracted)
-
-        # Handle HEIC/HEIF
-        elif name_lower.endswith(HEIC_FORMATS):
-            path = os.path.join(output_dir, f.name)
-            with open(path, "wb") as out:
-                out.write(f.getbuffer())
-
-            converted = convert_heic_to_jpg(path)
-            if converted:
-                photo_paths.append(converted)
-
-        # Handle foto biasa
         elif any(name_lower.endswith(ext) for ext in SUPPORTED_FORMATS):
-            path = os.path.join(output_dir, f.name)
-            with open(path, "wb") as out:
-                out.write(f.getbuffer())
-            photo_paths.append(path)
+            tasks.append((_write_regular_file, (f, output_dir)))
+            n_planned += 1
+
+    photo_paths = []
+    with ThreadPoolExecutor(max_workers=UPLOAD_MAX_WORKERS) as executor:
+        futures = [executor.submit(fn, *args) for fn, args in tasks]
+        for future in as_completed(futures):
+            try:
+                result = future.result()
+                if result:
+                    photo_paths.append(result)
+            except Exception as e:
+                logger.warning("Gagal menyimpan file upload: %s", e)
 
     return photo_paths
 
