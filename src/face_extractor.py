@@ -3,11 +3,13 @@ import numpy as np
 import cv2
 import streamlit as st
 from PIL import Image
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from insightface.app import FaceAnalysis
 from src.config import (
     FACE_MODEL_NAME, FACE_DET_SIZE, FACE_DET_THRESHOLD,
     FACE_PADDING, FACE_MIN_CROP_SIZE, MAX_IMAGE_INPUT_SIZE,
 )
+
 
 # Aktifkan support HEIC/HEIF lewat PIL agar bisa dibaca langsung
 try:
@@ -87,31 +89,48 @@ def extract_faces(image_path, model=None):
 
     return results
 
+
 def process_all_photos(photo_paths, progress_callback=None):
     model = load_model()
     all_faces = []
     photos_with_faces = 0
     skipped = 0
-    
-    for i, path in enumerate(photo_paths):
-        if progress_callback:
-            progress_callback(i+1, len(photo_paths), f"Mendeteksi wajah : {i+1}/{len(photo_paths)}")
-        try:
-            faces = extract_faces(path, model=model)
-            if faces:
-                photos_with_faces += 1
-            all_faces.extend(faces)
-        except Exception as e:
-            logger.warning("Gagal memproses foto '%s': %s", path, e)
-            skipped += 1
-            continue
-    
+    completed = 0
+
+    # Proses tiap foto di thread terpisah
+    # max_workers=4 aman untuk CPU 4-8 core
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        future_to_path = {
+            executor.submit(extract_faces, path, model): path
+            for path in photo_paths
+        }
+
+        for future in as_completed(future_to_path):
+            path = future_to_path[future]
+            completed += 1
+
+            if progress_callback:
+                progress_callback(
+                    completed,
+                    len(photo_paths),
+                    f"Mendeteksi wajah: {completed}/{len(photo_paths)}"
+                )
+
+            try:
+                faces = future.result()
+                if faces:
+                    photos_with_faces += 1
+                all_faces.extend(faces)
+            except Exception as e:
+                logger.warning("Gagal memproses foto '%s': %s", path, e)
+                skipped += 1
+
     stats = {
-        "total_photos": len(photo_paths),
-        "photos_with_faces": photos_with_faces,
-        "photos_without_faces": len(photo_paths) - photos_with_faces - skipped,
-        "skipped_errors": skipped,
-        "total_faces": len(all_faces),
+        "total_photos":          len(photo_paths),
+        "photos_with_faces":     photos_with_faces,
+        "photos_without_faces":  len(photo_paths) - photos_with_faces - skipped,
+        "skipped_errors":        skipped,
+        "total_faces":           len(all_faces),
     }
-        
+
     return all_faces, stats
