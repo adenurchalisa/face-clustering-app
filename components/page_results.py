@@ -1,13 +1,22 @@
+import base64
+import html
+import io
 import os
 import cv2
 import streamlit as st
 from src.utils import create_cluster_zip, numpy_to_pil
-from src.config import MAX_CLUSTER_PREVIEW, MAX_NOISE_PREVIEW
+from src.config import (
+    MAX_CLUSTER_PREVIEW,
+    GALLERY_PREVIEW_INITIAL,
+    GALLERY_THUMB_MAX_DIM,
+    GALLERY_JPEG_QUALITY,
+    MAX_NOISE_PREVIEW,
+)
 from components import reset_session_state
 
 
 @st.cache_data(show_spinner=False)
-def _load_full_photo(path, max_dim=1024):
+def _load_full_photo(path, max_dim=GALLERY_THUMB_MAX_DIM):
     """Baca foto penuh sebagai PIL Image (RGB), dengan downscale untuk preview."""
     img = cv2.imread(path)
     if img is None:
@@ -19,6 +28,45 @@ def _load_full_photo(path, max_dim=1024):
         new_h = max(1, int(round(h * scale)))
         img = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_AREA)
     return numpy_to_pil(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+
+
+def _pil_to_data_uri(img_pil, quality=GALLERY_JPEG_QUALITY):
+    """Encode PIL Image (RGB) jadi data-URI JPEG base64.
+
+    Gambar di-embed langsung di HTML sebagai data-URI agar TIDAK lewat
+    MediaFileManager Streamlit — manager itu meng-GC media antar-rerun, yang pada
+    galeri besar (puluhan cluster x ratusan foto) bikin sebagian gambar 404/blank
+    saat halaman dibuka ulang. Data-URI tidak pernah ter-GC, jadi selalu tampil.
+    """
+    buf = io.BytesIO()
+    img_pil.save(buf, format="JPEG", quality=quality)
+    b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+    return f"data:image/jpeg;base64,{b64}"
+
+
+def _render_image_grid(items, columns=3, show_caption=True):
+    """Render grid gambar dari list (img_pil, caption) sebagai satu blok HTML base64."""
+    cells = []
+    for img_pil, caption in items:
+        uri = _pil_to_data_uri(img_pil)
+        cap_html = ""
+        if show_caption and caption:
+            cap_html = (
+                f'<span style="font-size:0.72rem;color:#64748B;text-align:center;'
+                f'word-break:break-all;margin-top:4px;">{html.escape(caption)}</span>'
+            )
+        cells.append(
+            '<div style="display:flex;flex-direction:column;align-items:center;">'
+            f'<img src="{uri}" loading="lazy" '
+            'style="width:100%;border-radius:8px;display:block;object-fit:cover;"/>'
+            f'{cap_html}</div>'
+        )
+    grid = (
+        f'<div style="display:grid;grid-template-columns:repeat({columns},1fr);gap:12px;">'
+        + "".join(cells)
+        + "</div>"
+    )
+    st.markdown(grid, unsafe_allow_html=True)
 
 
 def render():
@@ -110,10 +158,12 @@ def render():
             # Baris atas: thumbnail wajah representatif + info + tombol download
             col_rep, col_info = st.columns([1, 5])
             with col_rep:
-                st.image(
-                    numpy_to_pil(rep_face["crop"]),
-                    width=100,
-                    caption="Representatif",
+                rep_uri = _pil_to_data_uri(numpy_to_pil(rep_face["crop"]))
+                st.markdown(
+                    f'<img src="{rep_uri}" width="100" '
+                    'style="border-radius:8px;display:block;"/>'
+                    '<span style="font-size:0.72rem;color:#64748B;">Representatif</span>',
+                    unsafe_allow_html=True,
                 )
             with col_info:
                 st.caption(
@@ -131,28 +181,33 @@ def render():
 
             st.caption("Foto-foto yang mengandung wajah ini:")
 
-            # Grid foto penuh (bukan crop wajah)
-            # Load semua foto dulu, baru render sekaligus — agar tidak muncul satu-satu
+            # Batasi jumlah foto awal; user bisa "tampilkan semua" sampai MAX_CLUSTER_PREVIEW.
+            # Membatasi jumlah gambar yang di-embed menjaga ukuran HTML & beban render.
+            show_all_key = f"show_all_{cid}"
+            show_all = st.session_state.get(show_all_key, False)
+            limit = MAX_CLUSTER_PREVIEW if show_all else GALLERY_PREVIEW_INITIAL
+            paths_to_show = unique_photo_paths[:limit]
+
+            # Grid foto penuh (bukan crop wajah), di-embed sebagai base64 data-URI
             with st.spinner("Memuat foto..."):
                 loaded_photos = [
-                    (path, img_pil)
-                    for path in unique_photo_paths[:MAX_CLUSTER_PREVIEW]
+                    (img_pil, os.path.basename(path))
+                    for path in paths_to_show
                     if (img_pil := _load_full_photo(path)) is not None
                 ]
+            _render_image_grid(loaded_photos, columns=3)
 
-            cols = st.columns(3)
-            for i, (path, img_pil) in enumerate(loaded_photos):
-                with cols[i % 3]:
-                    st.image(
-                        img_pil,
-                        use_container_width=True,
-                        caption=os.path.basename(path),
-                    )
-
-            if len(unique_photo_paths) > MAX_CLUSTER_PREVIEW:
-                st.caption(
-                    f"Menampilkan {MAX_CLUSTER_PREVIEW} dari {len(unique_photo_paths)} foto"
-                )
+            total = len(unique_photo_paths)
+            if not show_all and total > GALLERY_PREVIEW_INITIAL:
+                st.caption(f"Menampilkan {len(paths_to_show)} dari {total} foto")
+                if st.button(
+                    f"Tampilkan semua {min(total, MAX_CLUSTER_PREVIEW)} foto",
+                    key=f"more_{cid}",
+                ):
+                    st.session_state[show_all_key] = True
+                    st.rerun()
+            elif total > MAX_CLUSTER_PREVIEW:
+                st.caption(f"Menampilkan {MAX_CLUSTER_PREVIEW} dari {total} foto")
 
     # ── Noise section ──
     if noise_faces:
@@ -165,10 +220,11 @@ def render():
                 "</p>",
                 unsafe_allow_html=True,
             )
-            cols = st.columns(6)
-            for i, face in enumerate(noise_faces[:MAX_NOISE_PREVIEW]):
-                with cols[i % 6]:
-                    st.image(numpy_to_pil(face["crop"]), use_container_width=True)
+            noise_items = [
+                (numpy_to_pil(face["crop"]), None)
+                for face in noise_faces[:MAX_NOISE_PREVIEW]
+            ]
+            _render_image_grid(noise_items, columns=6, show_caption=False)
 
             if len(noise_faces) > MAX_NOISE_PREVIEW:
                 st.caption(f"Menampilkan {MAX_NOISE_PREVIEW} dari {len(noise_faces)} wajah")

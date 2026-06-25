@@ -39,5 +39,8 @@ SUPPORTED_FORMATS = [".jpg", ".jpeg", ".png", ".heic", ".heif"]
 TEMP_DIR          = os.path.join(os.getenv("TMPDIR", os.getenv("TEMP", "/tmp")), "facecluster")
 
 # UI
-MAX_CLUSTER_PREVIEW = 200
-MAX_NOISE_PREVIEW   = 12
+MAX_CLUSTER_PREVIEW   = 200   # batas absolut foto/cluster saat "tampilkan semua"
+GALLERY_PREVIEW_INITIAL = 24  # foto yang ditampilkan awal per cluster (sebelum "tampilkan semua")
+GALLERY_THUMB_MAX_DIM = 512   # downscale foto galeri sebelum di-embed base64 (jaga ukuran HTML)
+GALLERY_JPEG_QUALITY  = 80    # kualitas JPEG untuk embed base64
+MAX_NOISE_PREVIEW     = 12
