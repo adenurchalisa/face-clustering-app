@@ -1,107 +1,120 @@
 /* ═══════════════════════════════════════════════
-   FaceCluster — Modern Light Theme
+   FotoQu — Earthy Editorial Theme
+   amber #C27D2A · dark #141414 · cream #F7F5F0
    ═══════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&display=swap');
 
 /* ── Base ── */
 .stApp {
     font-family: 'Inter', sans-serif;
-    background: #F8FAFF;
+    background: #F7F5F0;
+    color: #141414;
 }
 
-/* ── Sidebar ── */
-section[data-testid="stSidebar"] {
-    background: #FFFFFF !important;
-    border-right: 1px solid #E8EAFF;
-    box-shadow: 2px 0 12px rgba(79, 70, 229, 0.06);
+html, body, [class*="css"], p, label, span, div {
+    font-family: 'Inter', sans-serif;
 }
 
-section[data-testid="stSidebar"] > div {
-    padding-top: 0 !important;
+/* ── Headings (serif) ── */
+h1, h2, h3, h4 {
+    font-family: 'DM Serif Display', serif !important;
+    color: #141414 !important;
+    letter-spacing: -0.2px;
+    font-weight: 400 !important;
 }
 
-/* ── Headings ── */
-h1 { font-weight: 800 !important; color: #0F172A !important; letter-spacing: -0.5px; }
-h2 { font-weight: 700 !important; color: #1E293B !important; }
-h3 { font-weight: 600 !important; color: #1E293B !important; }
-
-/* ── Buttons ── */
+/* ── Buttons: black default → amber on hover (pill) ── */
 .stButton > button {
-    border-radius: 10px !important;
-    font-weight: 600 !important;
-    font-size: 0.875rem !important;
-    transition: all 0.2s ease !important;
-    border: 1.5px solid #E2E8F0 !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+    background-color: #141414 !important;
+    color: #FFFFFF !important;
+    border-radius: 100px !important;
+    border: none !important;
+    padding: 0.6rem 1.6rem !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+    transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease !important;
+    box-shadow: 0 1px 3px rgba(20, 20, 20, 0.12) !important;
 }
 
 .stButton > button:hover {
+    background-color: #C27D2A !important;
+    color: #FFFFFF !important;
     transform: translateY(-1px) !important;
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15) !important;
+    box-shadow: 0 6px 18px rgba(194, 125, 42, 0.30) !important;
 }
 
+/* Primary = amber solid (active nav, CTA) */
 .stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%) !important;
-    border: none !important;
-    color: white !important;
-    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35) !important;
+    background-color: #C27D2A !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 2px 8px rgba(194, 125, 42, 0.32) !important;
 }
 
 .stButton > button[kind="primary"]:hover {
-    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.45) !important;
+    background-color: #A9691F !important;
+    box-shadow: 0 6px 20px rgba(194, 125, 42, 0.40) !important;
+}
+
+/* Secondary = outline on cream */
+.stButton > button[kind="secondary"] {
+    background-color: #FFFFFF !important;
+    color: #141414 !important;
+    border: 1.5px solid rgba(20, 20, 20, 0.12) !important;
+}
+
+.stButton > button[kind="secondary"]:hover {
+    background-color: #141414 !important;
+    color: #FFFFFF !important;
+    border-color: #141414 !important;
 }
 
 /* ── Metric Cards ── */
-[data-testid="metric-container"] {
+[data-testid="stMetric"], [data-testid="metric-container"] {
     background: #FFFFFF !important;
-    border: 1px solid #E8EAFF !important;
+    border: 1px solid #E7E0D4 !important;
     border-radius: 14px !important;
-    padding: 20px !important;
-    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.06) !important;
-    transition: box-shadow 0.2s ease !important;
-}
-
-[data-testid="metric-container"]:hover {
-    box-shadow: 0 4px 16px rgba(79, 70, 229, 0.12) !important;
+    padding: 18px 20px !important;
+    box-shadow: 0 2px 10px rgba(20, 20, 20, 0.04) !important;
 }
 
 [data-testid="stMetricLabel"] {
-    font-size: 0.75rem !important;
+    font-size: 0.72rem !important;
     font-weight: 600 !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.05em !important;
-    color: #64748B !important;
+    letter-spacing: 0.06em !important;
+    color: #666666 !important;
 }
 
 [data-testid="stMetricValue"] {
-    font-size: 1.75rem !important;
-    font-weight: 800 !important;
-    color: #4F46E5 !important;
+    font-family: 'DM Serif Display', serif !important;
+    font-size: 1.9rem !important;
+    color: #C27D2A !important;
 }
 
 /* ── Expanders ── */
 [data-testid="stExpander"] {
     background: #FFFFFF !important;
-    border: 1px solid #E8EAFF !important;
+    border: 1px solid #E7E0D4 !important;
     border-radius: 14px !important;
-    box-shadow: 0 1px 4px rgba(79, 70, 229, 0.05) !important;
+    box-shadow: 0 1px 4px rgba(20, 20, 20, 0.04) !important;
     overflow: hidden;
 }
 
 [data-testid="stExpander"] summary {
     font-weight: 600 !important;
     padding: 16px 20px !important;
-    color: #1E293B !important;
+    color: #141414 !important;
 }
 
 [data-testid="stExpander"] summary:hover {
-    background: #F5F3FF !important;
+    background: #F7F5F0 !important;
+    color: #C27D2A !important;
 }
 
 /* ── Tabs ── */
 .stTabs [data-baseweb="tab-list"] {
-    background: #EEF2FF !important;
+    background: #F0EBE1 !important;
     border-radius: 12px !important;
     padding: 4px !important;
     gap: 2px !important;
@@ -112,7 +125,7 @@ h3 { font-weight: 600 !important; color: #1E293B !important; }
     border-radius: 8px !important;
     font-weight: 600 !important;
     font-size: 0.875rem !important;
-    color: #64748B !important;
+    color: #666666 !important;
     padding: 8px 20px !important;
     border: none !important;
     transition: all 0.2s ease !important;
@@ -120,18 +133,18 @@ h3 { font-weight: 600 !important; color: #1E293B !important; }
 
 .stTabs [aria-selected="true"] {
     background: #FFFFFF !important;
-    color: #4F46E5 !important;
-    box-shadow: 0 1px 4px rgba(79, 70, 229, 0.15) !important;
+    color: #C27D2A !important;
+    box-shadow: 0 1px 4px rgba(194, 125, 42, 0.18) !important;
 }
 
 /* ── Progress Bar ── */
 .stProgress > div > div > div {
-    background: linear-gradient(90deg, #4F46E5, #7C3AED) !important;
+    background: linear-gradient(90deg, #C27D2A, #A9691F) !important;
     border-radius: 99px !important;
 }
 
 .stProgress > div > div {
-    background: #EEF2FF !important;
+    background: #EAE3D6 !important;
     border-radius: 99px !important;
 }
 
@@ -143,104 +156,123 @@ h3 { font-weight: 600 !important; color: #1E293B !important; }
 }
 
 [data-testid="stNotificationContentInfo"] {
-    background: #EEF2FF !important;
-    color: #4F46E5 !important;
+    background: #F4ECDD !important;
+    color: #8A5A1E !important;
 }
 
 [data-testid="stNotificationContentSuccess"] {
-    background: #ECFDF5 !important;
-    color: #065F46 !important;
+    background: #ECF3E9 !important;
+    color: #3F6B2E !important;
 }
 
 [data-testid="stNotificationContentError"] {
-    background: #FFF1F2 !important;
-    color: #9F1239 !important;
+    background: #FBECEA !important;
+    color: #9F3B2D !important;
 }
 
 /* ── File Uploader ── */
 [data-testid="stFileUploader"] {
-    border-radius: 14px !important;
+    border: 1.5px dashed rgba(20, 20, 20, 0.15) !important;
+    border-radius: 12px !important;
+    padding: 1rem !important;
+    background: #FFFFFF !important;
 }
 
 [data-testid="stFileUploaderDropzone"] {
-    background: #F5F3FF !important;
-    border: 2px dashed #A5B4FC !important;
-    border-radius: 14px !important;
+    background: #FFFFFF !important;
+    border: 2px dashed #D8C49E !important;
+    border-radius: 12px !important;
     transition: all 0.2s ease !important;
 }
 
 [data-testid="stFileUploaderDropzone"]:hover {
-    border-color: #4F46E5 !important;
-    background: #EEF2FF !important;
+    border-color: #C27D2A !important;
+    background: #FBF8F2 !important;
 }
 
 /* ── Text Input ── */
 .stTextInput > div > div > input {
     border-radius: 10px !important;
-    border: 1.5px solid #E2E8F0 !important;
+    border: 1.5px solid #E0D8C9 !important;
     font-size: 0.9rem !important;
+    background: #FFFFFF !important;
     transition: border-color 0.2s ease !important;
 }
 
 .stTextInput > div > div > input:focus {
-    border-color: #4F46E5 !important;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1) !important;
+    border-color: #C27D2A !important;
+    box-shadow: 0 0 0 3px rgba(194, 125, 42, 0.12) !important;
 }
 
 /* ── Multiselect ── */
 [data-baseweb="select"] > div {
     border-radius: 10px !important;
-    border: 1.5px solid #E2E8F0 !important;
+    border: 1.5px solid #E0D8C9 !important;
+    background: #FFFFFF !important;
+}
+
+[data-baseweb="tag"] {
+    background-color: #C27D2A !important;
 }
 
 /* ── Divider ── */
 hr {
     border: none !important;
-    border-top: 1px solid #E8EAFF !important;
+    border-top: 1px solid #E7E0D4 !important;
     margin: 1.5rem 0 !important;
 }
 
-/* ── Images (face thumbnails) ── */
+/* ── Images (face thumbnails / photos) ── */
 [data-testid="stImage"] img {
     border-radius: 10px !important;
-    border: 2px solid #E8EAFF !important;
+    border: 2px solid #EAE3D6 !important;
     transition: transform 0.2s ease, box-shadow 0.2s ease !important;
 }
 
 [data-testid="stImage"] img:hover {
-    transform: scale(1.04) !important;
-    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.2) !important;
+    transform: scale(1.03) !important;
+    box-shadow: 0 6px 20px rgba(194, 125, 42, 0.22) !important;
 }
 
-/* ── Download Button ── */
+/* ── Download Button (amber accent) ── */
 [data-testid="stDownloadButton"] > button {
-    background: linear-gradient(135deg, #10B981, #059669) !important;
-    color: white !important;
+    background: #C27D2A !important;
+    color: #FFFFFF !important;
     border: none !important;
-    border-radius: 10px !important;
+    border-radius: 100px !important;
     font-weight: 600 !important;
-    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3) !important;
+    box-shadow: 0 2px 8px rgba(194, 125, 42, 0.28) !important;
     transition: all 0.2s ease !important;
 }
 
 [data-testid="stDownloadButton"] > button:hover {
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4) !important;
+    background: #A9691F !important;
+    box-shadow: 0 6px 20px rgba(194, 125, 42, 0.40) !important;
     transform: translateY(-1px) !important;
+}
+
+/* ── Bordered container (hero upload card) ── */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    border-radius: 16px !important;
 }
 
 /* ── Caption / small text ── */
 .stCaption, [data-testid="stCaptionContainer"] {
-    color: #64748B !important;
+    color: #666666 !important;
     font-size: 0.8rem !important;
 }
 
 /* ── Spinner ── */
 [data-testid="stSpinner"] {
-    color: #4F46E5 !important;
+    color: #C27D2A !important;
 }
+
+/* ── Hide default chrome ── */
+#MainMenu { visibility: hidden; }
+footer { visibility: hidden; }
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #F1F5F9; border-radius: 99px; }
-::-webkit-scrollbar-thumb { background: #C7D2FE; border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: #4F46E5; }
+::-webkit-scrollbar-track { background: #F0EBE1; border-radius: 99px; }
+::-webkit-scrollbar-thumb { background: #D8C49E; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #C27D2A; }

@@ -9,10 +9,10 @@ logging.basicConfig(
 
 # Konfigurasi halaman — HARUS di baris paling pertama
 st.set_page_config(
-    page_title="FaceCluster",
+    page_title="FotoQu — Sort photos by face",
     page_icon="📸",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # Load custom CSS (hanya jika file tidak kosong)
@@ -36,9 +36,9 @@ for key, value in defaults.items():
     if key not in st.session_state:
         st.session_state[key] = value
 
-# Sidebar
-from components.sidebar import render_sidebar
-render_sidebar()
+# Top navigation (sidebar di-collapse — nav dipindah ke atas konten)
+from components.sidebar import render_topnav
+render_topnav()
 
 # Router
 from components.page_overview import render as overview

@@ -37,11 +37,11 @@ def render():
 
     # ── Header ──
     st.markdown(f"""
-    <div style="background: linear-gradient(135deg, #EEF2FF, #F5F3FF);
+    <div style="background: linear-gradient(135deg, #F4ECDD, #FBF8F2);
                 border-radius: 16px; padding: 28px 32px; margin-bottom: 20px;
-                border: 1px solid #C7D2FE;">
-        <h2 style="margin:0 0 6px 0; color:#3730A3; font-weight:800;">⏳ Memproses Foto</h2>
-        <p style="margin:0; color:#6366F1; font-size:0.95rem;">
+                border: 1px solid #E2CFA8;">
+        <h2 style="margin:0 0 6px 0; color:#141414;">⏳ Memproses Foto</h2>
+        <p style="margin:0; color:#8A5A1E; font-size:0.95rem;">
             Mendeteksi wajah dan mengelompokkan dari <b>{len(photos)}</b> foto —
             proses ini bisa memakan beberapa menit
         </p>

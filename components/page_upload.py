@@ -4,78 +4,102 @@ from src.drive_handler import download_from_drive
 from src.config import MAX_PHOTOS_UPLOAD
 from components import reset_session_state
 
+
 def render():
-    st.header("📁 Upload Foto")
-    st.caption(f"Maksimal {MAX_PHOTOS_UPLOAD} foto · Format: JPG, PNG, HEIC · Bisa upload ZIP")
+    col_kiri, col_kanan = st.columns([1, 1], gap="large")
 
-    tab1, tab2 = st.tabs(["📁 Upload File", "🔗 Google Drive"])
-
-    with tab1:
-        st.caption("Maks. 5 GB per upload · Untuk koleksi >1000 foto, gunakan tab Google Drive.")
-        uploaded_files = st.file_uploader(
-            "Pilih foto atau file ZIP",
-            type=["jpg", "jpeg", "png", "heic", "heif", "zip"],
-            accept_multiple_files=True,
-        )
-
-        if uploaded_files:
-            st.info(f"{len(uploaded_files)} file dipilih")
-
-            # Preview beberapa foto
-            preview_cols = st.columns(5)
-            for i, f in enumerate(uploaded_files[:5]):
-                if not f.name.lower().endswith(".zip"):
-                    with preview_cols[i]:
-                        try:
-                            st.image(f, use_container_width=True)
-                        except Exception:
-                            st.caption(f.name)
-
-            if len(uploaded_files) > 5:
-                st.caption(f"... dan {len(uploaded_files) - 5} file lainnya")
-
-            if st.button("🔄 Proses Foto", type="primary", use_container_width=True, key="btn_upload"):
-                reset_session_state()  # hapus file & state lama SEBELUM simpan yang baru
-                with st.spinner("Menyimpan file..."):
-                    photo_paths = save_uploaded_files(uploaded_files)
-
-                if not photo_paths:
-                    st.error("Tidak ada foto valid yang ditemukan")
-                else:
-                    st.success(f"{len(photo_paths)} foto siap diproses")
-                    st.session_state.photos = photo_paths
-                    st.session_state.page = "processing"
-                    st.rerun()
-
-    with tab2:
+    # ── Kolom kiri: teks hero ──
+    with col_kiri:
         st.markdown(
-            "Paste link folder Google Drive yang berisi foto. "
-            "Pastikan folder di-set **'Anyone with the link'** agar bisa diakses."
+            "<h1 style='font-family:\"DM Serif Display\",serif; font-size:3rem; "
+            "line-height:1.1; color:#141414; margin:0 0 14px 0;'>"
+            "Your photos,<br>sorted by face.</h1>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            "<p style='color:#666666; font-size:16px; line-height:1.6; max-width:420px;'>"
+            "Drop a mixed folder of thousands of photos. FotoQu mengelompokkan "
+            "setiap gambar berdasarkan orang di dalamnya — otomatis."
+            "</p>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"<p style='color:#999186; font-size:0.82rem;'>Maksimal {MAX_PHOTOS_UPLOAD} foto · "
+            "Format: JPG, PNG, HEIC · Bisa upload ZIP atau dari Google Drive.</p>",
+            unsafe_allow_html=True,
         )
 
-        drive_link = st.text_input(
-            "Link Google Drive",
-            placeholder="https://drive.google.com/drive/folders/...",
-        )
+    # ── Kolom kanan: kartu upload ──
+    with col_kanan:
+        with st.container(border=True):
+            tab1, tab2 = st.tabs(["📁 Upload File", "🔗 Google Drive"])
 
-        if drive_link:
-            if st.button("🔄 Download & Proses", type="primary", use_container_width=True, key="btn_drive"):
-                progress_bar = st.progress(0, text="Menghubungi Google Drive...")
+            with tab1:
+                st.caption("Maks. 5 GB per upload · Untuk koleksi >1000 foto, gunakan tab Google Drive.")
+                uploaded_files = st.file_uploader(
+                    "Drop foto atau file ZIP di sini",
+                    type=["jpg", "jpeg", "png", "heic", "heif", "zip"],
+                    accept_multiple_files=True,
+                )
 
-                def on_progress(current, total, filename):
-                    pct = int(current / total * 100)
-                    progress_bar.progress(pct, text=f"Mengunduh {current}/{total}: {filename}")
+                if uploaded_files:
+                    st.info(f"{len(uploaded_files)} file dipilih")
 
-                reset_session_state()  # hapus file & state lama SEBELUM download
-                photo_paths, error = download_from_drive(drive_link, progress_callback=on_progress)
-                progress_bar.empty()
+                    # Preview beberapa foto
+                    preview_cols = st.columns(5)
+                    for i, f in enumerate(uploaded_files[:5]):
+                        if not f.name.lower().endswith(".zip"):
+                            with preview_cols[i]:
+                                try:
+                                    st.image(f, use_container_width=True)
+                                except Exception:
+                                    st.caption(f.name)
 
-                if error:
-                    st.error(error)
-                elif not photo_paths:
-                    st.warning("Tidak ada foto yang ditemukan di link tersebut")
-                else:
-                    st.success(f"{len(photo_paths)} foto berhasil diunduh")
-                    st.session_state.photos = photo_paths
-                    st.session_state.page = "processing"
-                    st.rerun()
+                    if len(uploaded_files) > 5:
+                        st.caption(f"... dan {len(uploaded_files) - 5} file lainnya")
+
+                    if st.button("Sort my photos →", type="primary", use_container_width=True, key="btn_upload"):
+                        reset_session_state()  # hapus file & state lama SEBELUM simpan yang baru
+                        with st.spinner("Menyimpan file..."):
+                            photo_paths = save_uploaded_files(uploaded_files)
+
+                        if not photo_paths:
+                            st.error("Tidak ada foto valid yang ditemukan")
+                        else:
+                            st.success(f"{len(photo_paths)} foto siap diproses")
+                            st.session_state.photos = photo_paths
+                            st.session_state.page = "processing"
+                            st.rerun()
+
+            with tab2:
+                st.markdown(
+                    "Paste link folder Google Drive yang berisi foto. "
+                    "Pastikan folder di-set **'Anyone with the link'** agar bisa diakses."
+                )
+
+                drive_link = st.text_input(
+                    "Link Google Drive",
+                    placeholder="https://drive.google.com/drive/folders/...",
+                )
+
+                if drive_link:
+                    if st.button("Download & Sort →", type="primary", use_container_width=True, key="btn_drive"):
+                        progress_bar = st.progress(0, text="Menghubungi Google Drive...")
+
+                        def on_progress(current, total, filename):
+                            pct = int(current / total * 100)
+                            progress_bar.progress(pct, text=f"Mengunduh {current}/{total}: {filename}")
+
+                        reset_session_state()  # hapus file & state lama SEBELUM download
+                        photo_paths, error = download_from_drive(drive_link, progress_callback=on_progress)
+                        progress_bar.empty()
+
+                        if error:
+                            st.error(error)
+                        elif not photo_paths:
+                            st.warning("Tidak ada foto yang ditemukan di link tersebut")
+                        else:
+                            st.success(f"{len(photo_paths)} foto berhasil diunduh")
+                            st.session_state.photos = photo_paths
+                            st.session_state.page = "processing"
+                            st.rerun()
