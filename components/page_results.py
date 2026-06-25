@@ -85,17 +85,28 @@ def render():
     st.markdown("#### 👤 Gallery per Cluster")
 
     # ── Gallery per cluster ──
+    # Expander dibuat lazy (on_change="rerun" + cek .open): tanpa ini, isi SEMUA
+    # expander (thumbnail, build ZIP, load+render semua foto) dieksekusi di SETIAP
+    # render walau sedang collapsed — dengan puluhan cluster ini bikin halaman berat
+    # dan sebagian elemen (termasuk thumbnail representatif) gagal sempat tergambar.
     for cid in cluster_ids:
         faces = clusters[cid]
         unique_photo_paths = list(dict.fromkeys(f["source_photo"] for f in faces))
 
-        # Wajah representatif: skor deteksi tertinggi
-        rep_face = max(faces, key=lambda f: f["det_score"])
-
-        with st.expander(
+        exp = st.expander(
             f"👤 Cluster {cid + 1} — {len(faces)} wajah dari {len(unique_photo_paths)} foto",
             expanded=(cid == cluster_ids[0]),
-        ):
+            key=f"cluster_expander_{cid}",
+            on_change="rerun",
+        )
+        with exp:
+            if not exp.open:
+                st.caption("Klik untuk memuat detail cluster ini.")
+                continue
+
+            # Wajah representatif: skor deteksi tertinggi
+            rep_face = max(faces, key=lambda f: f["det_score"])
+
             # Baris atas: thumbnail wajah representatif + info + tombol download
             col_rep, col_info = st.columns([1, 5])
             with col_rep:
