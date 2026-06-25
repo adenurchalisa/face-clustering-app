@@ -121,19 +121,22 @@ def render():
             st.caption("Foto-foto yang mengandung wajah ini:")
 
             # Grid foto penuh (bukan crop wajah)
+            # Load semua foto dulu, baru render sekaligus — agar tidak muncul satu-satu
+            with st.spinner("Memuat foto..."):
+                loaded_photos = [
+                    (path, img_pil)
+                    for path in unique_photo_paths[:MAX_CLUSTER_PREVIEW]
+                    if (img_pil := _load_full_photo(path)) is not None
+                ]
+
             cols = st.columns(3)
-            shown = 0
-            for i, path in enumerate(unique_photo_paths[:MAX_CLUSTER_PREVIEW]):
-                img_pil = _load_full_photo(path)
-                if img_pil is None:
-                    continue
-                with cols[shown % 3]:
+            for i, (path, img_pil) in enumerate(loaded_photos):
+                with cols[i % 3]:
                     st.image(
                         img_pil,
                         use_container_width=True,
                         caption=os.path.basename(path),
                     )
-                shown += 1
 
             if len(unique_photo_paths) > MAX_CLUSTER_PREVIEW:
                 st.caption(
